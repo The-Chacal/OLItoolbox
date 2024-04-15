@@ -138,9 +138,9 @@ function creatingAEP( sequenceNb , shotNb ){
     if( aepFile.exists ){ 
         var userChoice = displayChoiceDlg( "   The shot \"" +  shotCode + "_comp_v1.0.aep\" already exists.\n\n   Do you really want to overwrite it?" , "Crush it!" , "Let it Live!" , "Open it!" );
         if( userChoice == "B" ){
-            return ;
-        } else if( userChoice == "C"){
             app.open( aepFile );
+            return ;
+        } else if( userChoice == "C" || userChoice == null ){
             return ;
         }
     }
@@ -230,6 +230,20 @@ function creatingAEP( sequenceNb , shotNb ){
         animaticLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 50 );
         animaticLayer.locked = true ;
     }
+    //Adding a text Layer for the meta file
+    if( metaFileString != null ){
+        var textLayer = contentCompItem.layers.addText( metaFileString );
+        textLayer.name = "Meta File";
+        textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
+        var textProp = textLayer.property(2).property(1);
+        var textDocument = textProp.value ;
+        textDocument.font = "Lexend";
+        textDocument.fontSize = 25 ;
+        textProp.setValue( textDocument );
+        textLayer.label = 0 ;
+        textLayer.guideLayer = true ;
+        textLayer.moveToEnd();
+    }
     //Adding the ref animation to the content comp.
     if( animationRefItem != null ){
         var animationRefLayer = contentCompItem.layers.add( animationRefItem );
@@ -260,7 +274,7 @@ function creatingAEP( sequenceNb , shotNb ){
     overspillLayer.name = "Overspill" ;
     overspillLayer.guideLayer = true ;
     overspillLayer.label = 0 ;
-    overspillLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 50 );
+    overspillLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 75 );
     var overspillLayerMask = overspillLayer.property( "ADBE Mask Parade" ).addProperty( "ADBE Mask Atom" );
     overspillLayerMask.maskMode = MaskMode.SUBTRACT ;
     var overspillLayerMaskPath =  overspillLayerMask.property(1).value ;
