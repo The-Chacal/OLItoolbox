@@ -39,21 +39,73 @@ function creatingUI( thisObj ){
             var updateToolbox = btnsGroupC.add( "Button" , undefined , "Upd." );
                 updateToolbox.helpTip = "   Only works at VL! Studio!\n\n   Update the toolbox jsx file.\n   You'll need to close and reopen the script to apply the update."
                 updateToolbox.size = btnsSize ;
+            var convertFiles = btnsGroupC.add( "Button" , undefined , "Convert" );
+                convertFiles.size = btnsSize;
 
+    
+    var savedConvertBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "convertBtnVisibility" ) );
+    if( savedConvertBtnVisibility != null ){
+        convertFiles.visible = savedConvertBtnVisibility ;
+    } else {
+        convertFiles.visible = false ;
+        saveString( "OLItoolboxSave" , "convertBtnVisibility" , JSON.stringify( convertFiles.visible ) ); 
+    }
+    
     OLItoolboxDlg.layout.layout( "true" );
 
-    var savedSequenceNb = getSavedString( "OLItoolboxSave" , "sequenceNb" );
+    var savedSequenceNb = JSON.parse( getSavedString( "OLItoolboxSave" , "sequenceNb" ) );
     if( savedSequenceNb != null ){ sequenceNb.text = savedSequenceNb ; }
-    var savedShotNb = getSavedString( "OLItoolboxSave" , "shotNb" );
+    var savedShotNb = JSON.parse( getSavedString( "OLItoolboxSave" , "shotNb" ) );
     if( savedShotNb != null ){ shotNb.text = savedShotNb ; }
 
     OLItoolboxDlg.onResizing = function(){ OLItoolboxDlg.layout.resize(); }
     sequenceNb.onActivate = function(){ sequenceNb.text = "" ; }
     shotNb.onActivate = function(){ shotNb.text = "" ; }
     createShot.onClick = function(){ creatingAEP( sequenceNb.text , shotNb.text ); }
+    openShot.onClick = function(){ openingAEP( sequenceNb.text , shotNb.text ); }
     exportEXR.onClick = function(){ exportingShot( "EXR" )};
     exportMOV.onClick = function(){ exportingShot( "MOV" )};
     updateToolbox.onClick = updatingToolBox ;
+    convertFiles.onClick = convertingTIFFS ;
+}
+/**
+ * Opens a AEP file for the asked shot. 
+ * @param { string } sequenceNb Number of the Sequence.
+ * @param { string } shotNb Number of the Shot.
+ * @returns 
+ */
+function openingAEP( sequenceNb , shotNb ){
+    
+    //Cleaning the numbers entered by the user.
+    sequenceNb = cleanNumberString( sequenceNb , 3 );
+    shotNb = cleanNumberString( shotNb , 3 );
+    if( sequenceNb == null || shotNb == null ){ displayAnnounceDlg( "Error" , undefined , "   One or more of the numbers you entered is invalid, please correct it.");  return ; }
+    var shotCode = "OL-sq" + sequenceNb + "_sh" + shotNb ;
+    //Getting the Project Folder.
+    var projectFolder = getSavedString( "OLItoolboxSave" , "OLIFolder" );
+    if( projectFolder == null ){
+        projectFolder = Folder.myDocuments.selectDlg( "Where is your \"OLIVIA\" Folder?" );
+        if( projectFolder != null && projectFolder.name == "OLIVIA" ){
+            saveString( "OLItoolboxSave" ,  "OLIFolder" , projectFolder.fsName );
+        } else {
+            displayAnnounceDlg( "Error" , undefined , "   You did not select a Folder named \"OLIVIA\".");
+            return ;
+        }
+    } else {
+        projectFolder = new Folder( projectFolder );
+    }
+    //Checking if the aep file already exists.
+    var aepFile = new File( new Folder( projectFolder.fsName + "/03_AEP" ).getFiles( "OL-sq" + sequenceNb + "_sh" + shotNb + "_comp_v*.aep" )[0] );
+    if( aepFile.exists ){
+        //Saving the values for the shot to create.
+        saveString( "OLItoolboxSave" ,  "sequenceNb" , sequenceNb );
+        saveString( "OLItoolboxSave" ,  "shotNb" , shotNb );
+        app.open( aepFile );
+    } else {
+        displayAnnounceDlg( "Error" , undefined , "   I can't find the AEP file for this shot." );
+        return ;
+    }
+
 }
 /**
  * Creates a AEP file for the asked shot. 
@@ -64,10 +116,9 @@ function creatingUI( thisObj ){
 function creatingAEP( sequenceNb , shotNb ){
 
     //Cleaning the numbers entered by the user.
-    sequenceNb = cleanNumberString( "Sequence" , sequenceNb , 3 );
-    shotNb = cleanNumberString( "Shot" , shotNb , 3 );
+    sequenceNb = cleanNumberString( sequenceNb , 3 );
+    shotNb = cleanNumberString( shotNb , 3 );
     if( sequenceNb == null || shotNb == null ){ displayAnnounceDlg( "Error" , undefined , "   One or more of the numbers you entered is invalid, please correct it.");  return ; }
-    //
     var shotCode = "OL-sq" + sequenceNb + "_sh" + shotNb ;
     //Getting the Project Folder.
     var projectFolder = getSavedString( "OLItoolboxSave" , "OLIFolder" );
@@ -85,10 +136,10 @@ function creatingAEP( sequenceNb , shotNb ){
     //Checking if the aep file already exists.
     var aepFile = new File( projectFolder.fsName + "/03_AEP/OL-sq" + sequenceNb + "_sh" + shotNb + "_comp_v1.0.aep" );
     if( aepFile.exists ){ 
-        var userChoice = displayChoiceDlg( shotCode + "_comp_v1.0" );
-        if( userChoice == "Cancel" ){
+        var userChoice = displayChoiceDlg( "   The shot \"" +  shotCode + "_comp_v1.0.aep\" already exists.\n\n   Do you really want to overwrite it?" , "Crush it!" , "Let it Live!" , "Open it!" );
+        if( userChoice == "B" ){
             return ;
-        } else if( userChoice == "Open"){
+        } else if( userChoice == "C"){
             app.open( aepFile );
             return ;
         }
@@ -151,8 +202,8 @@ function creatingAEP( sequenceNb , shotNb ){
                 var importOptions = new ImportOptions();
                 importOptions.file = animationFile ;
                 importOptions.sequence = true ;
+                animationItems.push( app.project.importFile( importOptions ) );
             }
-            animationItems.push( app.project.importFile( importOptions ) );
         }
         var animationFolderItem = app.project.items.addFolder( "Animation" );
         for( i = 0 ; i < animationItems.length ; i++ ){
@@ -250,12 +301,11 @@ function findItem( itemName ){
 }
 /**
 * Checks if the user entry is a number and return a string with the number of digits wanted. 
-* @param { string } numberName Name of the Number.
 * @param { string } entry String given by the User.
 * @param { number } digitsNb number of digits wanted for the final string.
 * @returns { string? } string with the number of digits wanted or null.
 */
-function cleanNumberString( numberName , entry , digitsNb){
+function cleanNumberString( entry , digitsNb){
 
    entry = parseInt( entry , 10 );
    if( isNaN( entry ) ){
@@ -271,53 +321,54 @@ function cleanNumberString( numberName , entry , digitsNb){
 }
 /**
  * Saves a String inside a given txt file in the user roaming folder. 
- * @param { string } SaveFileName Name of the txt file in the userData Folder. 
- * @param { string } StringName CodeName for the String to save.
- * @param { string } StringToSave Actual String to save.
+ * @param { string } saveFileName Name of the txt file in the userData Folder. 
+ * @param { string } stringName CodeName for the String to save.
+ * @param { string } stringToSave Actual String to save.
  */
-function saveString( SaveFileName , StringName , StringToSave ){
+function saveString( saveFileName , stringName , stringToSave ){
 
-    var saveFile = new File( Folder.userData.fsName + "/" + SaveFileName + ".txt" );
+    stringToSave = JSON.stringify( stringToSave )
+    var saveFile = new File( Folder.userData.fsName + "/" + saveFileName + ".txt" );
     if( saveFile.exists ){
         saveFile.open( "r" );
         var saveFileString = saveFile.read();
         saveFile.close()
-        var stringNameIndex = saveFileString.search( StringName );
+        var stringNameIndex = saveFileString.search( stringName );
         if( stringNameIndex >= 0 ){
-            var stringEndIndex = saveFileString.search( "</Path" + StringName + ">" );
+            var stringEndIndex = saveFileString.search( "</Path" + stringName + ">" );
             var oldString = saveFileString.slice( stringNameIndex , stringEndIndex );
-            saveFileString = saveFileString.replace( oldString , StringName + ">" + StringToSave );
+            saveFileString = saveFileString.replace( oldString , stringName + ">" + stringToSave );
         } else {
-            saveFileString = saveFileString.concat( "<Path" + StringName + ">" + StringToSave + "</Path" + StringName + ">\r\n" );
+            saveFileString = saveFileString.concat( "<Path" + stringName + ">" + stringToSave + "</Path" + stringName + ">\r\n" );
         }
         saveFile.open("w");
         saveFile.write( saveFileString );
     } else {
         saveFile.open( "w" );
-        saveFile.write("<Path" + StringName + ">" + StringToSave + "</Path" + StringName + ">\r\n");
+        saveFile.write("<Path" + stringName + ">" + stringToSave + "</Path" + stringName + ">\r\n");
     }
     saveFile.close();
 
 }
 /**
  * Gets a string from a given text file in the user roaming folder. 
- * @param { string } SaveFileName Name of the txt file in the userData Folder.
- * @param { string } StringName CodeName for the String to save.
- * @returns { string? } The saved string matching the Codename or null.
+ * @param { string } saveFileName Name of the txt file in the userData Folder.
+ * @param { string } stringName CodeName for the String to save.
+ * @returns { string? } The saved string matching the Codename or null. JSON parsed
  */
-function getSavedString( SaveFileName , StringName ){
+function getSavedString( saveFileName , stringName ){
 
     //Finding the text file
-    var saveFile = new File( Folder.userData.fsName + "/" + SaveFileName + ".txt" );
+    var saveFile = new File( Folder.userData.fsName + "/" + saveFileName + ".txt" );
     if( saveFile.exists ){
         saveFile.open( "r" );
         var saveFileString = saveFile.read();
         saveFile.close();
         //Getting the String
-        var stringNameIndex = saveFileString.search( StringName );
+        var stringNameIndex = saveFileString.search( stringName );
         if( stringNameIndex != -1 ){
-            var stringStartIndex = stringNameIndex + StringName.length + 1 ;
-            var stringEndIndex = saveFileString.search( "</Path" + StringName + ">" );
+            var stringStartIndex = stringNameIndex + stringName.length + 1 ;
+            var stringEndIndex = saveFileString.search( "</Path" + stringName + ">" );
             var string = saveFileString.slice( stringStartIndex , stringEndIndex );
             return string ;
         } else {
@@ -414,7 +465,7 @@ function exportingShot( exportFormat ){
             if( !MOVfolder.exists ){ MOVfolder.create(); }
             mainCompRender.applyTemplate( "SL / CompLength" );
             mainCompRender.outputModules[1].applyTemplate( "SL / AppleProRes 422 HQ" );
-            mainCompRender.outputModules[1].file = new File( MOVfolder.fsName + "/" + itemToExport.name );
+            mainCompRender.outputModules[1].file = new File( MOVfolder.fsName + "/" + itemToExport.name + ".mov");
         }
     }
 }
@@ -438,34 +489,154 @@ function displayAnnounceDlg( Title , PanelName , Content ){
 }
 /**
  * Opens a dialog giving a choice to the user. 
- * @param { string } shot ShotCode for the Shot. 
- * @returns { string } "Crush", "Cancel" ou "Open" Name of the choice made.
+ * @param { string } message - Message to display.
+ * @param { string } [ btnAtext = "Yes" ] - Button A text.
+ * @param { string } [ btnBtext = "No" ] - Button B text.
+ * @param { string } [ btnCtext = "Cancel" ] - Button C text.
+ * @returns { string } "A", "B" or "C" - According to the button pressed.
  */
-//Return = Boolean
-function displayChoiceDlg( shot ){
+function displayChoiceDlg( message , btnAtext , btnBtext , btnCtext ){
 
-    var choiceDialog = new Window( "dialog" , "Error" , undefined , { borderless: true } );
+    if( typeof btnAtext === "undefined" ){ btnAtext = "Yes" ; }
+    if( typeof btnBtext === "undefined" ){ btnBtext = "No" ; }
+    if( typeof btnCtext === "undefined" ){ btnCtext = "Cancel" ; }
+    var choiceDialog = new Window( "dialog" , "Decision to take." , undefined , { borderless: true } );
         choiceDialog.global = choiceDialog.add( "group" );
         choiceDialog.global.orientation = "column" ;
         choiceDialog.global.spacing = 2 ;
             choiceDialog.global.panel = choiceDialog.global.add( "panel" );
-            choiceDialog.global.panel.message = choiceDialog.global.panel.add( "staticText" , undefined , "   The shot \"" + shot + "\" already exists.\n\n   Do you really want to overwrite it?" , { multiline : true } );
+            choiceDialog.global.panel.message = choiceDialog.global.panel.add( "staticText" , undefined , message , { multiline : true } );
             choiceDialog.global.btnsRow = choiceDialog.global.add( "group" );
             choiceDialog.global.btnsRow.spacing = 0 ;
-                var btnA = choiceDialog.global.btnsRow.add( "button" , undefined , "Crush it!" );
+                var btnA = choiceDialog.global.btnsRow.add( "button" , undefined , btnAtext );
                 btnA.size = [ 75 ,25 ];
-                var btnB = choiceDialog.global.btnsRow.add( "button" , undefined , "Let it Live!" );
+                var btnB = choiceDialog.global.btnsRow.add( "button" , undefined , btnBtext );
                 btnB.size = [ 75 ,25 ];
-                var btnC = choiceDialog.global.btnsRow.add( "button" , undefined , "Open it!" );
+                var btnC = choiceDialog.global.btnsRow.add( "button" , undefined , btnCtext );
                 btnC.size = [ 75 ,25 ];
     var isAgreed = false ;
     choiceDialog.defaultElement = btnA ;
     choiceDialog.cancelElement = btnC ;
     choiceDialog.onResizing = function(){ choiceDialog.layout.resize(); }
-    btnA.onClick = function(){ isAgreed = "Crush" ; choiceDialog.close(); };
-    btnB.onClick = function(){ isAgreed = "Cancel" ; choiceDialog.close(); };
-    btnC.onClick = function(){ isAgreed = "Open" ; choiceDialog.close(); };
+    btnA.onClick = function(){ isAgreed = "A" ; choiceDialog.close(); };
+    btnB.onClick = function(){ isAgreed = "B" ; choiceDialog.close(); };
+    btnC.onClick = function(){ isAgreed = "C" ; choiceDialog.close(); };
     choiceDialog.show();
     return isAgreed ;
+
+}
+/**
+ * Creates an AEP file with the TIFFS set up for export.
+ */
+function convertingTIFFS(){
+
+    var shotRegExp = new RegExp( /_[0-9]{2}_[0-9A-Z]{2,}_[0-9]{2,}\.TIF/ );
+    var takeRegExp = new RegExp( /_[0-9]{2,}\.TIF/ )
+    //Locating the initial folder
+    var tiffFolder = new Folder( "E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done" );
+    //Getting the TIFFs
+    var tiffCollection = tiffFolder.getFiles( "*.TIF");
+    //Getting the existing folders
+    var foldersCollection = tiffFolder.getFiles( function( item ){ if( item instanceof Folder && item.name.search( "OL-" ) != -1 ){ return true ;} else { return false ;} } );
+    if( tiffCollection.length > 0 ){
+        //Getting the unique names of the takes in the folder.
+        var takesCollection = []
+        for( var i = 0 ; i < tiffCollection.length ; i++ ){
+            var takeSaved = false ;
+            for( var j = 0 ; j < takesCollection.length ; j++ ){
+                if( tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) == takesCollection[j].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) ){
+                    takeSaved = true ;
+                    break ;
+                }
+            }
+            if( !takeSaved ){ takesCollection.push( tiffCollection[i] ) }
+        }
+        //Checking if the TIFFs have been processed a first time.
+        var takesNotToTreat = [] ;
+        for( i = 0 ; i < takesCollection.length ; i++ ){
+            var choiceA = "A" ;
+            for( j = 0 ; j < foldersCollection.length ; j++ ){
+                if( takesCollection[i].name.slice( 0 , takesCollection[i].name.search( shotRegExp ) ) == foldersCollection[j].name ){
+                    var subfoldersCollection = foldersCollection[j].getFiles( function( item ){ if( item instanceof Folder && item.name.search( "OL-" ) != -1 ){ return true ;} else { return false ;} } );
+                    for( var k = 0 ; k < subfoldersCollection.length ; k++ ){
+                        if( takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) == subfoldersCollection[k].name ){
+                            var filesCollection = subfoldersCollection[k].getFiles("*.TIF");
+                            if( filesCollection.length > 0 ){
+                                choiceA = displayChoiceDlg( ("   You already converted the take \"" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) + "\".\n\n   Are you sure you want to do it again?") )
+                            }
+                        }
+                    }
+                }
+            }
+            if( choiceA == "B" ){
+                takesNotToTreat.push( takesCollection[i] );
+                takesCollection.splice( i , 1 );
+                i-- ;
+            } else if( choiceA == "C" ){
+                return ;
+            }
+        }
+        //Opening the AEP template.
+        var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
+        var timeStamp = new Date() ;
+        timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
+        var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
+        if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
+        if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
+        app.open( templateFile );
+        app.project.save( convertionFile );
+        //Sorting the TIFF and saving the files for the creation of the AEP.
+        for( i = 0 ; i < tiffCollection.length ; i++ ){
+            var toTreat = true ;
+            for( j = 0 ; j < takesNotToTreat.length ; j++ ){
+                if( tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) == takesNotToTreat[j].name.slice( 0 , takesNotToTreat[j].name.search( takeRegExp ) ) ){
+                    toTreat = false ;
+                }
+            }
+            if( toTreat ){
+                var shotFolder = new Folder( tiffFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( shotRegExp ) ) );
+                if( !shotFolder.exists ){ shotFolder.create(); }
+                var takeFolder = new Folder( shotFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) );
+                if( !takeFolder.exists ){ takeFolder.create(); }
+                tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) );
+                tiffCollection[i].remove();
+            }
+        }
+        //Updating the path of the takes.
+        for( i = 0 ; i < takesCollection.length ; i++ ){
+            takesCollection[i] = new File( tiffFolder.fsName + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( shotRegExp ) ) + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) + "/" + takesCollection[i].name )
+        }
+        //Opening the AEP template.
+        var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
+        var timeStamp = new Date() ;
+        timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
+        var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
+        if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
+        if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
+        app.open( templateFile );
+        app.project.save( convertionFile );
+        var assetsFolder = app.project.items.addFolder("Assets");
+        for( i = 0 ; i < takesCollection.length ; i++ ){
+            var importOptions = new ImportOptions();
+            importOptions.file = takesCollection[i] ;
+            importOptions.sequence = true ;
+            var takeItem = app.project.importFile( importOptions );
+            takeItem.parentFolder = assetsFolder ;
+            takesCollection[i] = app.project.items.addComp( takeItem.name.slice( 0 , takeItem.name.search( /_\[[0-9]{4}-[0-9]{4}\]\.TIF/ ) ) , takeItem.width , takeItem.height , 1 , takeItem.duration , 24 );
+            takesCollection[i].layers.add( takeItem )
+            var shotEXRfolder = new Folder( "E:/OLIVIA/01 - DGN/04 - EXRs/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Z]{2,}/ ) ) );
+            if( !shotEXRfolder.exists ){ shotEXRfolder.create(); }
+            var takeEXRfolder = new Folder( shotEXRfolder.fsName + "/" + takesCollection[i].name );
+            if( !takeEXRfolder.exists ){ takeEXRfolder.create(); }
+            //Adding the Comp to the render queue.
+            var takeCompRQitem = app.project.renderQueue.items.add( takesCollection[i] );
+            takeCompRQitem.applyTemplate( "SL / CompLength" );
+            takeCompRQitem.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
+            takeCompRQitem.outputModules[1].file = new File( takeEXRfolder.fsName + "/" + takesCollection[i].name + "_[####].exr" );
+            takesCollection[i].openInViewer();
+        }
+        app.project.renderQueue.showWindow( true )
+    }
+    alert("Done")
 
 }
