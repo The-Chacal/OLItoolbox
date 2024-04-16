@@ -636,7 +636,7 @@ function convertingTIFFS(){
                     var takeFolder = new Folder( shotFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) );
                     if( !takeFolder.exists ){ takeFolder.create(); }
                     //Copying the TIFFs in their folder and removing the original.
-                    if( tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) ) ){ /*tiffCollection[i].remove();*/ }
+                    if( tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) ) ){ tiffCollection[i].remove(); }
                 }
             }
             conversionProgress.close();
