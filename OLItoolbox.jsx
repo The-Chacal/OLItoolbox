@@ -462,7 +462,7 @@ function exportingShot( exportFormat ){
         if( exportFormat == "EXR" ){
             var EXRfolder = new Folder( projectFolder.fsName + "/04_Exports/01_EXR" );
             if( !EXRfolder.exists ){ EXRfolder.create(); }
-            mainCompRender.applyTemplate( "SL / CompLength" );
+            mainCompRender.applyTemplate( "SL / CompLength 16bits" );
             mainCompRender.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
             var new_data = {
                 "Output File Info":
@@ -477,7 +477,7 @@ function exportingShot( exportFormat ){
         if( exportFormat == "MOV" ){
             var MOVfolder = new Folder( projectFolder.fsName + "/04_Exports/01_MOV" );
             if( !MOVfolder.exists ){ MOVfolder.create(); }
-            mainCompRender.applyTemplate( "SL / CompLength" );
+            mainCompRender.applyTemplate( "SL / CompLength 16bits" );
             mainCompRender.outputModules[1].applyTemplate( "SL / AppleProRes 422 HQ" );
             mainCompRender.outputModules[1].file = new File( MOVfolder.fsName + "/" + itemToExport.name + ".mov");
         }
@@ -547,7 +547,7 @@ function convertingTIFFS(){
     var shotRegExp = new RegExp( /_[0-9]{2}_[0-9A-Z]{2,}_[0-9]{2,}\.TIF/ );
     var takeRegExp = new RegExp( /_[0-9]{2,}\.TIF/ )
     //Locating the initial folder
-    var tiffFolder = new Folder( "E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done" );
+    var tiffFolder = new Folder( "E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done" );//E:/OLIVIA/01 - DGN/02 - TIFFs
     //Getting the TIFFs
     var tiffCollection = tiffFolder.getFiles( "*.TIF");
     //Getting the existing folders
@@ -590,67 +590,110 @@ function convertingTIFFS(){
                 return ;
             }
         }
-        //Opening the AEP template.
-        var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
-        var timeStamp = new Date() ;
-        timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
-        var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
-        if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
-        if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
-        app.open( templateFile );
-        app.project.save( convertionFile );
-        //Sorting the TIFF and saving the files for the creation of the AEP.
-        for( i = 0 ; i < tiffCollection.length ; i++ ){
-            var toTreat = true ;
-            for( j = 0 ; j < takesNotToTreat.length ; j++ ){
-                if( tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) == takesNotToTreat[j].name.slice( 0 , takesNotToTreat[j].name.search( takeRegExp ) ) ){
-                    toTreat = false ;
+        if( takesCollection.length > 0 ){
+            //Getting the AEP template.
+            var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
+            if( !templateFile.exists ){ displayAnnounceDlg( "Error" , "Error :" , "   I can't find the Convertion Template so I'll stop working."); return ; }
+            //Getting the time stamp in a YYYYMMDD_HH.MM format.
+            var timeStamp = new Date() ;
+            timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();
+            //Creating the AEP file.
+            var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
+            if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
+            app.open( templateFile );
+            app.project.save( convertionFile );
+            //Sorting the TIFF and saving the files for the creation of the AEP.
+            var shotsToTreat = [] ;
+            for( i = 0 ; i < tiffCollection.length ; i++ ){
+                var toTreat = true ;
+                for( j = 0 ; j < takesNotToTreat.length ; j++ ){
+                    if( tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) == takesNotToTreat[j].name.slice( 0 , takesNotToTreat[j].name.search( takeRegExp ) ) ){
+                        toTreat = false ;
+                    }
+                }
+                if( toTreat ){
+                    //Creating the folders to sort the TIFFs.
+                    var shotFolder = new Folder( tiffFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( shotRegExp ) ) );
+                    if( !shotFolder.exists ){ shotFolder.create(); shotsToTreat.push( shotFolder.name ) }
+                    var takeFolder = new Folder( shotFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) );
+                    if( !takeFolder.exists ){ takeFolder.create(); }
+                    //Copying the TIFFs in their folder and removing the original.
+                    if( tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) ) ){ /*tiffCollection[i].remove();*/ }
                 }
             }
-            if( toTreat ){
-                var shotFolder = new Folder( tiffFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( shotRegExp ) ) );
-                if( !shotFolder.exists ){ shotFolder.create(); }
-                var takeFolder = new Folder( shotFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) );
-                if( !takeFolder.exists ){ takeFolder.create(); }
-                tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) );
-                tiffCollection[i].remove();
+            alert( "toTreat :" + shotsToTreat.length )
+            //Updating the path of the takes.
+            for( i = 0 ; i < takesCollection.length ; i++ ){
+                takesCollection[i] = new File( tiffFolder.fsName + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( shotRegExp ) ) + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) + "/" + takesCollection[i].name )
             }
+            
+            //Opening the AEP template.
+            var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
+            if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
+            //Getting the time stamp in a YYYYMMDD_HH.MM format.
+            var timeStamp = new Date() ;
+            timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
+            //Creating the template
+            var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
+            if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
+            app.open( templateFile );
+            app.project.save( convertionFile );
+            //Creating the Assets folder for the project.
+            var assetsFolder = app.project.items.addFolder("Assets");
+            //Parsing the takes.
+            for( i = 0 ; i < takesCollection.length ; i++ ){
+                //Importing the take.
+                var importOptions = new ImportOptions();
+                importOptions.file = takesCollection[i] ;
+                importOptions.sequence = true ;
+                var takeItem = app.project.importFile( importOptions );
+                //Moving it into the Assets Folder.
+                takeItem.parentFolder = assetsFolder ;
+                //Creating the Composition for the take.
+                takesCollection[i] = app.project.items.addComp( takeItem.name.slice( 0 , takeItem.name.search( /_\[[0-9]{4}-[0-9]{4}\]\.TIF/ ) ) , takeItem.width , takeItem.height , 1 , takeItem.duration , 24 );
+                //Adding the take to the Composition.
+                takesCollection[i].layers.add( takeItem )
+                //Preparing the export of the take.
+                var shotEXRfolder = new Folder( "E:/OLIVIA/01 - DGN/04 - EXRs/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Z]{2,}/ ) ) );
+                if( !shotEXRfolder.exists ){ shotEXRfolder.create(); }
+                var takeEXRfolder = new Folder( shotEXRfolder.fsName + "/" + takesCollection[i].name );
+                if( !takeEXRfolder.exists ){ takeEXRfolder.create(); }
+                //Adding the Comp to the render queue.
+                var takeCompRQitem = app.project.renderQueue.items.add( takesCollection[i] );
+                takeCompRQitem.applyTemplate( "SL / CompLength 16bits" );
+                takeCompRQitem.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
+                takeCompRQitem.outputModules[1].file = new File( takeEXRfolder.fsName + "/" + takesCollection[i].name + "_[####].exr" );
+                //Opening the Composition so the User can check it before export.
+                takesCollection[i].openInViewer();
+            }
+            //Gathering the animation export and meta file.
+            for( i = 0 ; i < shotsToTreat.length ; i ++ ){
+                var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( shotsToTreat[i] + "*.dgn" )
+                if( dgnFolder.length > 0 ){
+                    dgnFolder = dgnFolder[0];
+                    alert( dgnFolder )
+                    var shotExports = dgnFolder.getFiles( shotsToTreat[i] + "*.mp4");
+                    var shotMetaFiles = dgnFolder.getFiles( shotsToTreat[i] + "*_meta.txt");
+                    alert( shotExports.join("\n\n"))
+                    if( shotExports.length > 0 ){
+                        for( j = 0 ; j < shotExports.length ; j++ ){
+                            shotExports[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotExports[j].name ) );
+                        }
+                    }
+                    alert( shotMetaFiles.join("\n\n"))
+                    if( shotMetaFiles.length > 0 ){
+                        for( j = 0 ; j < shotMetaFiles.length ; j++ ){
+                            shotMetaFiles[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotMetaFiles[j].name ) );
+                        }
+                    }
+                }
+                
+            }
+            //Making the Render Queue active.
+            app.project.renderQueue.showWindow( true )
         }
-        //Updating the path of the takes.
-        for( i = 0 ; i < takesCollection.length ; i++ ){
-            takesCollection[i] = new File( tiffFolder.fsName + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( shotRegExp ) ) + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) + "/" + takesCollection[i].name )
-        }
-        //Opening the AEP template.
-        var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
-        var timeStamp = new Date() ;
-        timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
-        var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
-        if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
-        if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
-        app.open( templateFile );
-        app.project.save( convertionFile );
-        var assetsFolder = app.project.items.addFolder("Assets");
-        for( i = 0 ; i < takesCollection.length ; i++ ){
-            var importOptions = new ImportOptions();
-            importOptions.file = takesCollection[i] ;
-            importOptions.sequence = true ;
-            var takeItem = app.project.importFile( importOptions );
-            takeItem.parentFolder = assetsFolder ;
-            takesCollection[i] = app.project.items.addComp( takeItem.name.slice( 0 , takeItem.name.search( /_\[[0-9]{4}-[0-9]{4}\]\.TIF/ ) ) , takeItem.width , takeItem.height , 1 , takeItem.duration , 24 );
-            takesCollection[i].layers.add( takeItem )
-            var shotEXRfolder = new Folder( "E:/OLIVIA/01 - DGN/04 - EXRs/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Z]{2,}/ ) ) );
-            if( !shotEXRfolder.exists ){ shotEXRfolder.create(); }
-            var takeEXRfolder = new Folder( shotEXRfolder.fsName + "/" + takesCollection[i].name );
-            if( !takeEXRfolder.exists ){ takeEXRfolder.create(); }
-            //Adding the Comp to the render queue.
-            var takeCompRQitem = app.project.renderQueue.items.add( takesCollection[i] );
-            takeCompRQitem.applyTemplate( "SL / CompLength" );
-            takeCompRQitem.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
-            takeCompRQitem.outputModules[1].file = new File( takeEXRfolder.fsName + "/" + takesCollection[i].name + "_[####].exr" );
-            takesCollection[i].openInViewer();
-        }
-        app.project.renderQueue.showWindow( true )
     }
-    alert("Done")
+    //Announcing the end of the script.
+    displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.")
 
 }
