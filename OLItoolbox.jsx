@@ -602,9 +602,27 @@ function convertingTIFFS(){
             if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
             app.open( templateFile );
             app.project.save( convertionFile );
+            //Creating a progress bar dialog.
+            var conversionProgress = new Window( "palette" , "Work in Progress." );
+                conversionProgress.spacing = 2 ;
+                var progressGroup = conversionProgress.add( "Group" );
+                    progressGroup.spacing = 0 ;
+                    var currentStep = progressGroup.add( "StaticText" , undefined , 0 );
+                    currentStep.characters = 3 ;
+                    progressGroup.add( "StaticText" , undefined , " // " );
+                    var totalSteps = progressGroup.add( "StaticText" , undefined , 0 );
+                    totalSteps.characters = 3 ;
+                var progressBar = conversionProgress.add("progressbar");
+                progressBar.size = [ 150 , 15]
+            conversionProgress.show()
             //Sorting the TIFF and saving the files for the creation of the AEP.
             var shotsToTreat = [] ;
             for( i = 0 ; i < tiffCollection.length ; i++ ){
+                //Updating the Progress Bar ;
+                currentStep.text = cleanNumberString( i + 1 , 3 ) ;
+                totalSteps.text = cleanNumberString( tiffCollection.length , 3 ) ;
+                progressBar.value = ( ( i + 1 ) / tiffCollection.length ) * 100 ;
+                conversionProgress.update();
                 var toTreat = true ;
                 for( j = 0 ; j < takesNotToTreat.length ; j++ ){
                     if( tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) == takesNotToTreat[j].name.slice( 0 , takesNotToTreat[j].name.search( takeRegExp ) ) ){
@@ -621,7 +639,7 @@ function convertingTIFFS(){
                     if( tiffCollection[i].copy( new File( takeFolder.fsName + "/" + tiffCollection[i].name ) ) ){ /*tiffCollection[i].remove();*/ }
                 }
             }
-            alert( "toTreat :" + shotsToTreat.length )
+            conversionProgress.close();
             //Updating the path of the takes.
             for( i = 0 ; i < takesCollection.length ; i++ ){
                 takesCollection[i] = new File( tiffFolder.fsName + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( shotRegExp ) ) + "/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( takeRegExp ) ) + "/" + takesCollection[i].name )
@@ -671,16 +689,13 @@ function convertingTIFFS(){
                 var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( shotsToTreat[i] + "*.dgn" )
                 if( dgnFolder.length > 0 ){
                     dgnFolder = dgnFolder[0];
-                    alert( dgnFolder )
                     var shotExports = dgnFolder.getFiles( shotsToTreat[i] + "*.mp4");
                     var shotMetaFiles = dgnFolder.getFiles( shotsToTreat[i] + "*_meta.txt");
-                    alert( shotExports.join("\n\n"))
                     if( shotExports.length > 0 ){
                         for( j = 0 ; j < shotExports.length ; j++ ){
                             shotExports[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotExports[j].name ) );
                         }
                     }
-                    alert( shotMetaFiles.join("\n\n"))
                     if( shotMetaFiles.length > 0 ){
                         for( j = 0 ; j < shotMetaFiles.length ; j++ ){
                             shotMetaFiles[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotMetaFiles[j].name ) );
