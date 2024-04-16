@@ -547,7 +547,7 @@ function convertingTIFFS(){
     var shotRegExp = new RegExp( /_[0-9]{2}_[0-9A-Z]{2,}_[0-9]{2,}\.TIF/ );
     var takeRegExp = new RegExp( /_[0-9]{2,}\.TIF/ )
     //Locating the initial folder
-    var tiffFolder = new Folder( "E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done" );//E:/OLIVIA/01 - DGN/02 - TIFFs
+    var tiffFolder = new Folder( "E:/OLIVIA/01 - DGN/02 - TIFFs" );//E:/OLIVIA/01 - DGN/02 - TIFFs//E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done
     //Getting the TIFFs
     var tiffCollection = tiffFolder.getFiles( "*.TIF");
     //Getting the existing folders
