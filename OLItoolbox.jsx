@@ -39,8 +39,12 @@ function creatingUI( thisObj ){
             var updateToolbox = btnsGroupC.add( "Button" , undefined , "Upd." );
                 updateToolbox.helpTip = "   Only works at VL! Studio!\n\n   Update the toolbox jsx file.\n   You'll need to close and reopen the script to apply the update."
                 updateToolbox.size = btnsSize ;
-            var convertFiles = btnsGroupC.add( "Button" , undefined , "Convert" );
+        var btnsGroupD = OLItoolboxDlg.add( "Group" );
+            btnsGroupD.spacing = 0 ;
+            var convertFiles = btnsGroupD.add( "Button" , undefined , "Convert" );
                 convertFiles.size = btnsSize;
+            var exportFiles = btnsGroupD.add( "Button" , undefined , "Export" );
+                exportFiles.size = btnsSize;
 
     
     var savedConvertBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "convertBtnVisibility" ) );
@@ -49,6 +53,13 @@ function creatingUI( thisObj ){
     } else {
         convertFiles.visible = false ;
         saveString( "OLItoolboxSave" , "convertBtnVisibility" , JSON.stringify( convertFiles.visible ) ); 
+    }
+    var savedExportBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "exportBtnVisibility" ) );
+    if( savedExportBtnVisibility != null ){
+        exportFiles.visible = savedExportBtnVisibility ;
+    } else {
+        exportFiles.visible = false ;
+        saveString( "OLItoolboxSave" , "exportBtnVisibility" , JSON.stringify( exportFiles.visible ) ); 
     }
     
     OLItoolboxDlg.layout.layout( "true" );
@@ -67,6 +78,7 @@ function creatingUI( thisObj ){
     exportMOV.onClick = function(){ exportingShot( "MOV" )};
     updateToolbox.onClick = updatingToolBox ;
     convertFiles.onClick = convertingTIFFS ;
+    exportFiles.onClick = exportTIFFS ;
 }
 /**
  * Opens a AEP file for the asked shot. 
@@ -544,7 +556,7 @@ function displayChoiceDlg( message , btnAtext , btnBtext , btnCtext ){
  */
 function convertingTIFFS(){
 
-    var shotRegExp = new RegExp( /_[0-9]{2}_[0-9A-Z]{2,}_[0-9]{2,}\.TIF/ );
+    var shotRegExp = new RegExp( /_[0-9]{2}_[0-9A-Za-z]{2,}_[0-9]{2,}\.TIF/ );
     var takeRegExp = new RegExp( /_[0-9]{2,}\.TIF/ )
     //Locating the initial folder
     var tiffFolder = new Folder( "E:/OLIVIA/01 - DGN/02 - TIFFs" );//E:/OLIVIA/01 - DGN/02 - TIFFs//E:/OLIVIA/00 - Tests/Test - Convert/01 - TIFFs - done
@@ -591,17 +603,6 @@ function convertingTIFFS(){
             }
         }
         if( takesCollection.length > 0 ){
-            //Getting the AEP template.
-            var templateFile = new File( "E:/OLIVIA/01 - DGN/00 - AEP Template/OLI-TiffConversionTemplate.aep" );
-            if( !templateFile.exists ){ displayAnnounceDlg( "Error" , "Error :" , "   I can't find the Convertion Template so I'll stop working."); return ; }
-            //Getting the time stamp in a YYYYMMDD_HH.MM format.
-            var timeStamp = new Date() ;
-            timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();
-            //Creating the AEP file.
-            var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
-            if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
-            app.open( templateFile );
-            app.project.save( convertionFile );
             //Creating a progress bar dialog.
             var conversionProgress = new Window( "palette" , "Work in Progress." );
                 conversionProgress.spacing = 2 ;
@@ -616,7 +617,6 @@ function convertingTIFFS(){
                 progressBar.size = [ 150 , 15]
             conversionProgress.show()
             //Sorting the TIFF and saving the files for the creation of the AEP.
-            var shotsToTreat = [] ;
             for( i = 0 ; i < tiffCollection.length ; i++ ){
                 //Updating the Progress Bar ;
                 currentStep.text = cleanNumberString( i + 1 , 3 ) ;
@@ -632,7 +632,7 @@ function convertingTIFFS(){
                 if( toTreat ){
                     //Creating the folders to sort the TIFFs.
                     var shotFolder = new Folder( tiffFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( shotRegExp ) ) );
-                    if( !shotFolder.exists ){ shotFolder.create(); shotsToTreat.push( shotFolder.name ) }
+                    if( !shotFolder.exists ){ shotFolder.create(); }
                     var takeFolder = new Folder( shotFolder.fsName + "/" + tiffCollection[i].name.slice( 0 , tiffCollection[i].name.search( takeRegExp ) ) );
                     if( !takeFolder.exists ){ takeFolder.create(); }
                     //Copying the TIFFs in their folder and removing the original.
@@ -650,15 +650,16 @@ function convertingTIFFS(){
             if( !templateFile.exists ){ displayAnnounceDlg( "Error" , undefined , "   I can't find the Convertion Template so I'll stop working."); return ; }
             //Getting the time stamp in a YYYYMMDD_HH.MM format.
             var timeStamp = new Date() ;
-            timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + timeStamp.getHours() + "." + timeStamp.getMinutes();     
+            timeStamp = timeStamp.getFullYear() + cleanNumberString( timeStamp.getMonth() + 1 , 2 ) + cleanNumberString( timeStamp.getDate() , 2 ) + "_" + cleanNumberString( timeStamp.getHours() , 2 ) + "." + cleanNumberString( timeStamp.getMinutes() , 2 );     
             //Creating the template
-            var convertionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/convertionFile_" +  timeStamp + ".aep" );
+            var conversionFile = new File( "E:/OLIVIA/01 - DGN/03 - AEPs/conversionFile_" +  timeStamp + ".aep" );
             if( app.project != undefined ){ if( !app.project.close( CloseOptions.PROMPT_TO_SAVE_CHANGES ) ){ return ; } }
             app.open( templateFile );
-            app.project.save( convertionFile );
+            app.project.save( conversionFile );
             //Creating the Assets folder for the project.
             var assetsFolder = app.project.items.addFolder("Assets");
             //Parsing the takes.
+            var shotsToTreat = [];
             for( i = 0 ; i < takesCollection.length ; i++ ){
                 //Importing the take.
                 var importOptions = new ImportOptions();
@@ -672,7 +673,7 @@ function convertingTIFFS(){
                 //Adding the take to the Composition.
                 takesCollection[i].layers.add( takeItem )
                 //Preparing the export of the take.
-                var shotEXRfolder = new Folder( "E:/OLIVIA/01 - DGN/04 - EXRs/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Z]{2,}/ ) ) );
+                var shotEXRfolder = new Folder( "E:/OLIVIA/01 - DGN/04 - EXRs/" + takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) ) + " - ToDo" );
                 if( !shotEXRfolder.exists ){ shotEXRfolder.create(); }
                 var takeEXRfolder = new Folder( shotEXRfolder.fsName + "/" + takesCollection[i].name );
                 if( !takeEXRfolder.exists ){ takeEXRfolder.create(); }
@@ -681,24 +682,36 @@ function convertingTIFFS(){
                 takeCompRQitem.applyTemplate( "SL / CompLength 16bits" );
                 takeCompRQitem.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
                 takeCompRQitem.outputModules[1].file = new File( takeEXRfolder.fsName + "/" + takesCollection[i].name + "_[####].exr" );
+                var shotDGNfolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) ) + "*.dgn*" );
+                if( shotDGNfolder.length > 0 ){ 
+                    shotDGNfolder = shotDGNfolder[0];
+                    if( shotDGNfolder.name.search( "%20-%20ToExport" ) == -1 ){
+                        if( shotDGNfolder.name.search( "%20-%20Done" ) == -1 ){
+                            shotDGNfolder.rename( shotDGNfolder.name + " - ToExport" );
+                        } else {
+                            shotDGNfolder.rename( shotDGNfolder.name.replace( "%20-%20Done" , " - ToExport" ) );
+                        }
+                        shotsToTreat.push( takesCollection[i].name.slice( 0 , takesCollection[i].name.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) ) )
+                    }
+                }
                 //Opening the Composition so the User can check it before export.
                 takesCollection[i].openInViewer();
             }
             //Gathering the animation export and meta file.
             for( i = 0 ; i < shotsToTreat.length ; i ++ ){
-                var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( shotsToTreat[i] + "*.dgn" )
+                var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( shotsToTreat[i] + "*.dgn*" );
                 if( dgnFolder.length > 0 ){
                     dgnFolder = dgnFolder[0];
                     var shotExports = dgnFolder.getFiles( shotsToTreat[i] + "*.mp4");
                     var shotMetaFiles = dgnFolder.getFiles( shotsToTreat[i] + "*_meta.txt");
                     if( shotExports.length > 0 ){
                         for( j = 0 ; j < shotExports.length ; j++ ){
-                            shotExports[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotExports[j].name ) );
+                            shotExports[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + " - ToDo/" + shotExports[j].name ) );
                         }
                     }
                     if( shotMetaFiles.length > 0 ){
                         for( j = 0 ; j < shotMetaFiles.length ; j++ ){
-                            shotMetaFiles[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + "/" + shotMetaFiles[j].name ) );
+                            shotMetaFiles[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + " - ToDo/" + shotMetaFiles[j].name ) );
                         }
                     }
                 }
@@ -706,9 +719,52 @@ function convertingTIFFS(){
             }
             //Making the Render Queue active.
             app.project.renderQueue.showWindow( true )
+            //Saving the file
+            app.project.save();
         }
     }
     //Announcing the end of the script.
     displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.")
+
+}
+//Launch the render queue and update the folders name.
+function exportTIFFS(){
+
+    app.project.renderQueue.render();
+    var RQitems = app.project.renderQueue.items ;
+    for( var i = 1 ; i <= RQitems.length ; i++ ){
+        var outputFilePath = RQitems[i].outputModules[1].file.fsName ;
+        outputFilePath = outputFilePath.split( "\\" );
+        outputFilePath.pop();
+        outputFilePath.pop();
+        outputFilePath = outputFilePath.join( "\\" );
+        var outputShotFolder = new Folder( outputFilePath );
+        if( outputShotFolder.exists ){
+            if( outputShotFolder.name.search( "%20-%20ToDo" ) != -1 ){
+                outputShotFolder.rename( outputShotFolder.name.slice( 0 , - 11 ) );
+            }
+        }
+        var RQitemName = RQitems[i].outputModules[1].file.name ;
+        RQitemName = RQitemName.slice( 0 , RQitemName.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) );
+        var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( RQitemName + "*.dgn*" );
+        if( dgnFolder.length > 0 ){
+            dgnFolder = dgnFolder[0];
+            if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) == -1 ){
+                dgnFolder.rename( dgnFolder.name + " - Done" );
+            } else if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) != -1 ){
+                dgnFolder.rename( dgnFolder.name.replace( "%20-%20ToExport" , "%20-%20Done" ) );
+            }
+        }
+    }
+    if( app.project.file.name.search( "%20-%20exported" ) == -1 ){
+        var newFileName = app.project.file.name.slice( 0 , -4 ) + " - exported.aep"
+        var oldFilePath = app.project.file.fsName ;
+        oldFilePath = oldFilePath.split( "\\" );
+        oldFilePath.pop();
+        oldFilePath = oldFilePath.join( "\\" );
+        app.project.file.rename( newFileName );
+        app.project.file ;
+        app.project.save( new File( oldFilePath + "/" + newFileName ) );
+    }
 
 }
