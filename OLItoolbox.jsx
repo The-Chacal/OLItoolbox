@@ -1,5 +1,5 @@
 //****************************************//
-//   Olivia toolbox v1.0.0
+//   Olivia toolbox
 //****************************************//
 creatingUI( this );
 /**
@@ -8,43 +8,57 @@ creatingUI( this );
  */
 function creatingUI( thisObj ){
     
+    var versionNb = "1.0.1" ;
     var OLItoolboxDlg = thisObj ;
-        OLItoolboxDlg.alignment = [ "center" , "top" ];
-        OLItoolboxDlg.spacing = 4 ;
-        var shotNameGroup = OLItoolboxDlg.add( "Group" );
-            shotNameGroup.spacing = 0 ;
-            shotNameGroup.add( "StaticText" , undefined , "OL-sq" );
-            var sequenceNb = shotNameGroup.add( "editText{ text: 'XXX' , justify : 'center' , characters : 4 }");
-            shotNameGroup.add( "StaticText" , undefined , "_sh" );
-            var shotNb = shotNameGroup.add( "editText{ text: 'XXX' , justify : 'center' , characters : 4 }");
-        var btnsGroupA = OLItoolboxDlg.add( "Group");
-            btnsGroupA.spacing = 0 ;
-            var btnsSize = [ 50 , 25 ];
-            var createShot = btnsGroupA.add( "Button" , undefined , "Create" );
-                createShot.helpTip = "   Create your aep file for the selected shot."
-                createShot.size = btnsSize ;
-            var openShot = btnsGroupA.add( "Button" , undefined , "Open" );
-                openShot.helpTip = "   Open the selected shot aep file."
-                openShot.size = btnsSize ;
-        var btnsGroupB = OLItoolboxDlg.add( "Group" );
-            btnsGroupB.spacing = 0 ;
-            var exportEXR = btnsGroupB.add( "Button" , undefined , "EXR" );
-                exportEXR.helpTip = "   Set up an export in EXR for the current aep."
-                exportEXR.size = btnsSize ;
-            var exportMOV = btnsGroupB.add( "Button" , undefined , "ProRes" );
-                exportMOV.helpTip = "   Set up an export in AppleProRes 422 HQ for the current aep."
-                exportMOV.size = btnsSize ;
-        var btnsGroupC = OLItoolboxDlg.add( "Group" );
-            btnsGroupC.spacing = 0 ;
-            var updateToolbox = btnsGroupC.add( "Button" , undefined , "Upd." );
-                updateToolbox.helpTip = "   Only works at VL! Studio!\n\n   Update the toolbox jsx file.\n   You'll need to close and reopen the script to apply the update."
-                updateToolbox.size = btnsSize ;
-        var btnsGroupD = OLItoolboxDlg.add( "Group" );
-            btnsGroupD.spacing = 0 ;
-            var convertFiles = btnsGroupD.add( "Button" , undefined , "Convert" );
-                convertFiles.size = btnsSize;
-            var exportFiles = btnsGroupD.add( "Button" , undefined , "Export" );
-                exportFiles.size = btnsSize;
+        var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
+            OLItoolboxdlgGroup.orientation = "Column" ;
+            OLItoolboxdlgGroup.alignment = [ "center" , "top" ];
+            OLItoolboxdlgGroup.spacing = 4 ;
+            var userSection = OLItoolboxdlgGroup.add( "Panel" );
+                userSection.orientation = "Column" ;
+                userSection.margins = [ 4 , 4 , 4 , 10 ];
+                userSection.alignment = [ "center" , "top" ];
+                userSection.spacing = 4 ;
+                var shotNameGroup = userSection.add( "Group" );
+                    shotNameGroup.spacing = 0 ;
+                    shotNameGroup.add( "StaticText" , undefined , "OL-sq" );
+                    var sequenceNb = shotNameGroup.add( "editText{ text: 'XXX' , justify : 'center' , characters : 4 }");
+                    shotNameGroup.add( "StaticText" , undefined , "_sh" );
+                    var shotNb = shotNameGroup.add( "editText{ text: 'XXX' , justify : 'center' , characters : 4 }");
+                var btnsGroupA = userSection.add( "Group");
+                    btnsGroupA.spacing = 0 ;
+                    btnsGroupA.alignChildren = "Fill" ;
+                    var btnsSize = [ 70 , 20 ];
+                    var createShot = btnsGroupA.add( "Button" , undefined , "Create" );
+                        createShot.helpTip = "   Create your aep file for the selected shot." ;
+                        createShot.size = btnsSize ;
+                    var openShot = btnsGroupA.add( "Button" , undefined , "Open" );
+                        openShot.helpTip = "   Open the selected shot aep file." ;
+                        openShot.size = btnsSize ;
+                var btnsGroupB = userSection.add( "Group" );
+                    btnsGroupB.spacing = 0 ;
+                    var exportEXR = btnsGroupB.add( "Button" , undefined , "EXR" );
+                        exportEXR.helpTip = "   Set up an export in EXR for the current aep." ;
+                        exportEXR.size = btnsSize ;
+                    var exportMOV = btnsGroupB.add( "Button" , undefined , "ProRes" );
+                        exportMOV.helpTip = "   Set up an export in AppleProRes 422 Proxy for the current aep." ;
+                        exportMOV.size = btnsSize ;
+                var btnsGroupC = userSection.add( "Group" );
+                    btnsGroupC.spacing = 0 ;
+                    var updateToolbox = btnsGroupC.add( "Button" , undefined , "Upd." );
+                        updateToolbox.helpTip = "   Only works at VL! Studio!\n\n   Update the toolbox jsx file.\n   You'll need to close and reopen the script to apply the update." ;
+                        updateToolbox.size = btnsSize ;
+            var versionGroup = OLItoolboxdlgGroup.add( "Group" );
+                versionGroup.orientation = "Column" ;
+                versionGroup.alignment = "Fill" ;
+                var versionText = versionGroup.add( "StaticText" , undefined , "OLItoolbox v" + versionNb );
+                    versionText.alignment = "Right" ;
+            var btnsGroupD = OLItoolboxdlgGroup.add( "Group" );
+                btnsGroupD.spacing = 0 ;
+                var convertFiles = btnsGroupD.add( "Button" , undefined , "Convert" );
+                    convertFiles.size = btnsSize;
+                var exportFiles = btnsGroupD.add( "Button" , undefined , "Export" );
+                    exportFiles.size = btnsSize;
 
     
     var savedConvertBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "convertBtnVisibility" ) );
@@ -110,8 +124,8 @@ function openingAEP( sequenceNb , shotNb ){
     var aepFile = new File( new Folder( projectFolder.fsName + "/03_AEP" ).getFiles( "OL-sq" + sequenceNb + "_sh" + shotNb + "_comp_v*.aep" )[0] );
     if( aepFile.exists ){
         //Saving the values for the shot to create.
-        saveString( "OLItoolboxSave" ,  "sequenceNb" , sequenceNb );
-        saveString( "OLItoolboxSave" ,  "shotNb" , shotNb );
+        saveString( "OLItoolboxSave" ,  "sequenceNb" , JSON.stringify( sequenceNb ) );
+        saveString( "OLItoolboxSave" ,  "shotNb" , JSON.stringify( shotNb ) );
         app.open( aepFile );
     } else {
         displayAnnounceDlg( "Error" , undefined , "   I can't find the AEP file for this shot." );
@@ -160,8 +174,8 @@ function creatingAEP( sequenceNb , shotNb ){
     var animationFolder = new File( projectFolder.fsName + "/01_Assets/03_Animation/OL-sq" + sequenceNb + "_sh" + shotNb );
     if( !animationFolder.exists){ displayAnnounceDlg( "Error" , undefined , "   I can't find the animation folder for this shot." ); return ; }
     //Saving the values for the shot to create.
-    saveString( "OLItoolboxSave" ,  "sequenceNb" , sequenceNb );
-    saveString( "OLItoolboxSave" ,  "shotNb" , shotNb );
+    saveString( "OLItoolboxSave" ,  "sequenceNb" , JSON.stringify( sequenceNb ) );
+    saveString( "OLItoolboxSave" ,  "shotNb" , JSON.stringify( shotNb ) );
     //Opening the template.
     var templateFolder = new Folder( projectFolder.fsName + "/01_Assets/01_Library/01_AEPlib" );
     var templateFile = new File( templateFolder.getFiles( "OLI_Template_v*" )[0] );
@@ -187,21 +201,25 @@ function creatingAEP( sequenceNb , shotNb ){
         animaticItem.parentFolder = assetsFolderItem ;
     }
     //Importing AnimationRef and placing it in the "Assest" Folder.
-    var animationRefItem = null ;
+    var animationRefItems = [] ;
     var animationRefFiles = new Folder( animationFolder.fsName ).getFiles( "*" + shotCode + "*.mp4" );
     if( animationRefFiles.length > 0 ){
-        var animationRefFile = animationRefFiles[0];
-        animationRefItem = app.project.importFile( new ImportOptions( animationRefFile ) );
-        animationRefItem.parentFolder = assetsFolderItem ;
+        for( var i = 0 ; i < animationRefFiles.length ; i++ ){ 
+            var animationRefFile = animationRefFiles[i];
+            animationRefItems[i] = app.project.importFile( new ImportOptions( animationRefFile ) );
+            animationRefItems[i].parentFolder = assetsFolderItem ;
+        }
     }
     //Getting Meta file String.
-    var metaFileString = null ;
+    var metaFileStrings = [] ;
     var metaFiles = new Folder( animationFolder.fsName ).getFiles( "*" + shotCode + "*.txt" );
     if( metaFiles.length > 0 ){
-        var metaFile = metaFiles[0];
-        metaFile.open( "r" );
-        metaFileString = metaFile.read();
-        metaFile.close();
+        for( i = 0 ; i < metaFiles.length ; i++ ){
+            var metaFile = metaFiles[i];
+            metaFile.open( "r" );
+            metaFileStrings.push( metaFile.read() );
+            metaFile.close();
+        }
     }
     //Importing Animation Layers in a "Animation" Folder and placing it in the "Assets" Folder.
     var animationItems = [] ;
@@ -227,48 +245,61 @@ function creatingAEP( sequenceNb , shotNb ){
     //------ Setting up the scene ------
     //Preparing the Content Composition.
     contentCompItem.openInViewer();
-    if( animationRefItem != null && contentCompItem.duration != animationRefItem.duration){
-        contentCompItem.duration = animationRefItem.duration.toFixed( 2 );
+    if( animationRefItems.length > 0 && contentCompItem.duration != animationRefItems[0].duration){
+        contentCompItem.duration = animationRefItems[0].duration.toFixed( 2 );
+    }
+    //Adding a text Layer for the meta file
+    if( metaFileStrings.length > 0 ){
+        for( i = 0 ; i < metaFileStrings.length ; i++ ){
+            var textLayer = contentCompItem.layers.addText( metaFileStrings[i] );
+            textLayer.name = "Meta File " + ( i + 1);
+            textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
+            var textProp = textLayer.property(2).property(1);
+            var textDocument = textProp.value ;
+            if( app.fonts.allFonts.join(".").search( "Lexend" ) != -1 ){
+                textDocument.font = "Lexend-Medium";
+            } else {
+                textDocument.font = "Gadugi-Bold";
+            }
+            textDocument.fontSize = 25 ;
+            textProp.setValue( textDocument );
+            textLayer.label = 0 ;
+            textLayer.guideLayer = true ;
+            textLayer.moveToEnd();
+        }
     }
     //Adding the animatic to the content comp.
     if( animaticItem != null ){
         var animaticLayer = contentCompItem.layers.add( animaticItem );
         animaticLayer.name = "Ref - animaticLayer" ;
+        animaticLayer.audioEnabled = false ;
         animaticLayer.guideLayer = true ;
         animaticLayer.label = 0 ;
         animaticLayer.moveToEnd();
         animaticLayer.property( "ADBE Transform Group" ).property( "ADBE Scale" ).setValue( [ 50 , 50 ] );
-        animaticLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 150 + animaticLayer.width / 4 , 150 + animaticLayer.height / 4 ] );
+        animaticLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 + animaticLayer.width / 4 , 375 + animaticLayer.height / 4 ] );
         animaticLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 50 );
         animaticLayer.locked = true ;
     }
-    //Adding a text Layer for the meta file
-    if( metaFileString != null ){
-        var textLayer = contentCompItem.layers.addText( metaFileString );
-        textLayer.name = "Meta File";
-        textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
-        var textProp = textLayer.property(2).property(1);
-        var textDocument = textProp.value ;
-        textDocument.font = "Lexend";
-        textDocument.fontSize = 25 ;
-        textProp.setValue( textDocument );
-        textLayer.label = 0 ;
-        textLayer.guideLayer = true ;
-        textLayer.moveToEnd();
-    }
     //Adding the ref animation to the content comp.
-    if( animationRefItem != null ){
-        var animationRefLayer = contentCompItem.layers.add( animationRefItem );
-        animationRefLayer.name = "Ref - Anim" ;
-        animationRefLayer.audioEnabled = false ;
-        animationRefLayer.guideLayer = true ;
-        animationRefLayer.label = 0 ;
-        animationRefLayer.moveToEnd();
-        animationRefLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 50 );
-        var ratio = 1 ;
-        if( animationRefItem.width != 1920 ){ ratio = 1920 / animationRefItem.width ; }
-        animationRefLayer.property( "ADBE Transform Group" ).property( "ADBE Scale" ).setValue( [ 171.66666666 * ratio , 171.66666666 * ratio ] );
-        animationRefLayer.locked = true ;
+    if( animationRefItems.length > 0 ){
+        for( i = 0 ; i < animationRefItems.length ; i++ ){
+            var animationRefLayer = contentCompItem.layers.add( animationRefItems[i] );
+            if( animationRefItems.length > 1 ){
+                animationRefLayer.name = "Ref - Anim" + ( i + 1 );
+            } else {
+                animationRefLayer.name = "Ref - Anim" ;
+            }
+            animationRefLayer.audioEnabled = true ;
+            animationRefLayer.guideLayer = true ;
+            animationRefLayer.label = 0 ;
+            animationRefLayer.moveToEnd();
+            animationRefLayer.property( "ADBE Transform Group" ).property( "ADBE Opacity" ).setValue( 50 );
+            var ratio = 1 ;
+            if( animationRefItems[i].width != 1920 ){ ratio = 1920 / animationRefItems[i].width ; }
+            animationRefLayer.property( "ADBE Transform Group" ).property( "ADBE Scale" ).setValue( [ 171.66666666 * ratio , 171.66666666 * ratio ] );
+            animationRefLayer.locked = true ;
+        }
     }
     //Adding the animation layers to the content comp.
     if( animationItems.length > 0 ){
@@ -294,13 +325,28 @@ function creatingAEP( sequenceNb , shotNb ){
     overspillLayerMask.property(1).setValue( overspillLayerMaskPath );
     overspillLayer.locked = true ;
     //Preparing the Main Composition.
-    if( animationRefItem != null && mainCompItem.duration != animationRefItem.duration ){
-        mainCompItem.duration = animationRefItem.duration.toFixed( 2 );
+    if( animationRefItems.length > 0 && mainCompItem.duration != animationRefItems[0].duration ){
+        mainCompItem.duration = animationRefItems[0].duration.toFixed( 2 );
+    } else if( animaticItem != null && mainCompItem.duration != animaticItem.duration ){
+        mainCompItem.duration = animaticItem.duration.toFixed( 2 );
     }
-    mainCompItem.layers[1].audioEnabled = false ;
-    if( animaticItem != null ){
-        var soundLayer = mainCompItem.layers.add( animaticItem );
+    //Disabling the precomp sound.
+    if( mainCompItem.layers[1].hasAudio ){
+        mainCompItem.layers[1].audioEnabled = false ;
+    }
+    //Adding a TC.
+    var TClayer = mainCompItem.layers.addSolid( [ 0 , 0 , 0 ] , "TC" , mainCompItem.width , mainCompItem.height , mainCompItem.pixelAspect );
+    TClayer.adjustmentLayer = true ;
+    var TCeffect = TClayer.property( "ADBE Effect Parade" ).addProperty( "ADBE Timecode" );
+    TCeffect.property( 1 ).setValue( 2 );
+    TCeffect.property( 8 ).setValue( [ 30 , 30 ] );
+    TCeffect.property( 9 ).setValue( 40 );
+
+    //Adding the animation Ref for the sound of it.
+    if( animationRefItems.length > 0 && animationRefItems[0].hasAudio){
+        var soundLayer = mainCompItem.layers.add( animationRefItems[0] );
         soundLayer.name = "Ref - Sound" ;
+        soundLayer.audioEnabled = true ;
         soundLayer.enabled = false ;
         soundLayer.moveToEnd();
         soundLayer.locked = true ;
@@ -353,7 +399,6 @@ function cleanNumberString( entry , digitsNb){
  */
 function saveString( saveFileName , stringName , stringToSave ){
 
-    stringToSave = JSON.stringify( stringToSave )
     var saveFile = new File( Folder.userData.fsName + "/" + saveFileName + ".txt" );
     if( saveFile.exists ){
         saveFile.open( "r" );
@@ -490,7 +535,7 @@ function exportingShot( exportFormat ){
             var MOVfolder = new Folder( projectFolder.fsName + "/04_Exports/01_MOV" );
             if( !MOVfolder.exists ){ MOVfolder.create(); }
             mainCompRender.applyTemplate( "SL / CompLength 16bits" );
-            mainCompRender.outputModules[1].applyTemplate( "SL / AppleProRes 422 HQ" );
+            mainCompRender.outputModules[1].applyTemplate( "SL / AppleProRes 422 Proxy" );
             mainCompRender.outputModules[1].file = new File( MOVfolder.fsName + "/" + itemToExport.name + ".mov");
         }
     }
@@ -703,7 +748,7 @@ function convertingTIFFS(){
                 if( dgnFolder.length > 0 ){
                     dgnFolder = dgnFolder[0];
                     var shotExports = dgnFolder.getFiles( shotsToTreat[i] + "*.mp4");
-                    var shotMetaFiles = dgnFolder.getFiles( shotsToTreat[i] + "*_meta.txt");
+                    var shotMetaFiles = dgnFolder.getFiles( shotsToTreat[i] + "*_meta*.txt");
                     if( shotExports.length > 0 ){
                         for( j = 0 ; j < shotExports.length ; j++ ){
                             shotExports[j].copy( new File( "E:/OLIVIA/01 - DGN/04 - EXRs/" + shotsToTreat[i] + " - ToDo/" + shotExports[j].name ) );
@@ -766,5 +811,7 @@ function exportTIFFS(){
         app.project.file ;
         app.project.save( new File( oldFilePath + "/" + newFileName ) );
     }
+    //Announcing the end of the script.
+    displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.")
 
 }
