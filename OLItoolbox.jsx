@@ -8,7 +8,7 @@ creatingUI( this );
  */
 function creatingUI( thisObj ){
     
-    var versionNb = "1.0.1" ;
+    var versionNb = "1.1.0" ;
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
@@ -226,13 +226,15 @@ function creatingAEP( sequenceNb , shotNb ){
     var animationFolders = new Folder( animationFolder.fsName ).getFiles( "*" + shotCode + "_*_*" );
     if( animationFolders.length > 0 ){
         for( i = 0 ; i < animationFolders.length ; i++ ){
-            var animationFiles = animationFolders[i].getFiles( "*.exr" );
-            if( animationFiles.length > 0 ){
-                var animationFile = new File( animationFiles[0].fsName )
-                var importOptions = new ImportOptions();
-                importOptions.file = animationFile ;
-                importOptions.sequence = true ;
-                animationItems.push( app.project.importFile( importOptions ) );
+            if( animationFolders[i] instanceof Folder ){
+                var animationFiles = animationFolders[i].getFiles( "*.exr" );
+                if( animationFiles.length > 0 ){
+                    var animationFile = new File( animationFiles[0].fsName )
+                    var importOptions = new ImportOptions();
+                    importOptions.file = animationFile ;
+                    importOptions.sequence = true ;
+                    animationItems.push( app.project.importFile( importOptions ) );
+                }
             }
         }
         var animationFolderItem = app.project.items.addFolder( "Animation" );
@@ -256,10 +258,10 @@ function creatingAEP( sequenceNb , shotNb ){
             textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
             var textProp = textLayer.property(2).property(1);
             var textDocument = textProp.value ;
-            if( app.fonts.allFonts.join(".").search( "Lexend" ) != -1 ){
+            if( app.fonts.allFonts.toString().search( "Lexend" ) != -1 ){
                 textDocument.font = "Lexend-Medium";
             } else {
-                textDocument.font = "Gadugi-Bold";
+                textDocument.font = "Arial-BoldMT";
             }
             textDocument.fontSize = 25 ;
             textProp.setValue( textDocument );
