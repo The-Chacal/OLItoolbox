@@ -8,7 +8,7 @@ creatingUI( this );
  */
 function creatingUI( thisObj ){
     
-    var versionNb = "1.1.0" ;
+    var versionNb = "1.1.1" ;
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
@@ -258,10 +258,10 @@ function creatingAEP( sequenceNb , shotNb ){
             textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
             var textProp = textLayer.property(2).property(1);
             var textDocument = textProp.value ;
-            if( app.fonts.allFonts.toString().search( "Lexend" ) != -1 ){
-                textDocument.font = "Lexend-Medium";
+            if( arrayIncludes( app.fonts.allFonts , "Lexend-Medium" ) ){
+                textDocument.font = "Lexend-Medium" ;
             } else {
-                textDocument.font = "Arial-BoldMT";
+                textDocument.font = "Arial-BoldMT" ;
             }
             textDocument.fontSize = 25 ;
             textProp.setValue( textDocument );
@@ -307,7 +307,7 @@ function creatingAEP( sequenceNb , shotNb ){
     if( animationItems.length > 0 ){
         for( i = 0 ; i < animationItems.length ; i++ ){
             var animationLayer = contentCompItem.layers.add( animationItems[i] );
-            contentCompItem.layers.precompose( [ animationLayer.index ] , animationLayer.name.slice( 0 , -18 ) + " - Footage" , false );
+            contentCompItem.layers.precompose( [ animationLayer.index ] , animationLayer.name.slice( 0 , -16 ) + " - Footage" , false );
             animationLayer = contentCompItem.layers[1];
             animationLayer.name = animationLayer.name.slice( 0 , -10 ) ;
             animationLayer.label = 3 ;
@@ -374,10 +374,30 @@ function findItem( itemName ){
 
 }
 /**
+ * @param { array } list The array containing the list to parse.
+ * @param { string } item The string to be found in the list. 
+ */
+function arrayIncludes( list , item ){
+    if( list instanceof Array ){
+        for( var i = 0 ; i < list.length ; i++ ){
+            if( list[i] instanceof Array ){
+                if( arrayIncludes( list[i] , item ) ){
+                    return true;
+                };
+            } else {
+                if( list[i] == item ){
+                    return true ;
+                }
+            }
+        }
+    }
+    return false ;
+}
+/**
 * Checks if the user entry is a number and return a string with the number of digits wanted. 
 * @param { string } entry String given by the User.
-* @param { number } digitsNb number of digits wanted for the final string.
-* @returns { string? } string with the number of digits wanted or null.
+* @param { number } digitsNb Number of digits wanted for the final string.
+* @returns { string? } String with the number of digits wanted or null.
 */
 function cleanNumberString( entry , digitsNb){
 
