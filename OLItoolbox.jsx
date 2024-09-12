@@ -258,11 +258,11 @@ function creatingAEP( sequenceNb , shotNb ){
             textLayer.property( "ADBE Transform Group" ).property( "ADBE Position" ).setValue( [ 200 , 375 ] );
             var textProp = textLayer.property(2).property(1);
             var textDocument = textProp.value ;
-            if( arrayIncludes( app.fonts.allFonts , "Lexend-Medium" ) ){
+            /*if( arrayIncludes( app.fonts.allFonts , "Lexend-Medium" ) ){
                 textDocument.font = "Lexend-Medium" ;
             } else {
                 textDocument.font = "Arial-BoldMT" ;
-            }
+            }*/
             textDocument.fontSize = 25 ;
             textProp.setValue( textDocument );
             textLayer.label = 0 ;
