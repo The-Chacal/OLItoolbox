@@ -8,7 +8,7 @@ creatingUI( this );
  */
 function creatingUI( thisObj ){
     
-    var versionNb = "1.1.3" ;
+    var versionNb = "1.2.0" ;
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
@@ -45,6 +45,9 @@ function creatingUI( thisObj ){
                         exportMOV.size = btnsSize ;
                 var btnsGroupC = userSection.add( "Group" );
                     btnsGroupC.spacing = 0 ;
+                    var sortExports = btnsGroupC.add( "Button" , undefined , "Sort" );
+                        sortExports.helpTip = "   Sort your mov exports to only keep the last version.\n\n   Put the older versions in a subfolder \"XXXx- Older Versions -xXX\"." ;
+                        sortExports.size = btnsSize ;
                     var updateToolbox = btnsGroupC.add( "Button" , undefined , "Upd." );
                         updateToolbox.helpTip = "   Only works at VL! Studio!\n\n   Update the toolbox jsx file.\n   You'll need to close and reopen the script to apply the update." ;
                         updateToolbox.size = btnsSize ;
@@ -90,23 +93,16 @@ function creatingUI( thisObj ){
     openShot.onClick = function(){ openingAEP( sequenceNb.text , shotNb.text ); }
     exportEXR.onClick = function(){ exportingShot( "EXR" )};
     exportMOV.onClick = function(){ exportingShot( "MOV" )};
+    sortExports.onClick = sortingExports ;
     updateToolbox.onClick = updatingToolBox ;
     convertFiles.onClick = convertingTIFFS ;
-    exportFiles.onClick = exportTIFFS ;
+    exportFiles.onClick = exportingEXRs ;
 }
 /**
- * Opens a AEP file for the asked shot. 
- * @param { string } sequenceNb Number of the Sequence.
- * @param { string } shotNb Number of the Shot.
- * @returns 
+ * Sorts the exports to only keep the last version of each shot.
  */
-function openingAEP( sequenceNb , shotNb ){
-    
-    //Cleaning the numbers entered by the user.
-    sequenceNb = cleanNumberString( sequenceNb , 3 );
-    shotNb = cleanNumberString( shotNb , 3 );
-    if( sequenceNb == null || shotNb == null ){ displayAnnounceDlg( "Error" , undefined , "   One or more of the numbers you entered is invalid, please correct it.");  return ; }
-    var shotCode = "OL-sq" + sequenceNb + "_sh" + shotNb ;
+function sortingExports(){
+
     //Getting the Project Folder.
     var projectFolder = getSavedString( "OLItoolboxSave" , "OLIFolder" );
     if( projectFolder == null ){
@@ -120,18 +116,118 @@ function openingAEP( sequenceNb , shotNb ){
     } else {
         projectFolder = new Folder( projectFolder );
     }
+    //Getting the exports Files.
+    var exportsFolder = new Folder( projectFolder.fsName + "/04_Exports/01_MOV" );
+    if( !exportsFolder.exists ){ displayAnnounceDlg( "Shoot!..." , undefined , "   I can not find a folder to tidy."); return ; }
+    var oldVersionsFolder = new Folder( exportsFolder.fsName + "/XXXx- Older Versions -xXX" );
+    if( !oldVersionsFolder.exists ){ oldVersionsFolder.create(); }
+    var exports = exportsFolder.getFiles( "OL-sq*.mov" );
+    //Sorting the Exports by name of Shot.
+    var sortedExports = {};
+    for( var i = 0 ; i < exports.length ; i++ ){
+        var currentFile = exports[i];
+        var currentFileName = currentFile.name.slice( 3 , 14 );
+        var currentFileVersion = currentFile.name.slice( currentFile.name.search( /v[0-9]+/ ) + 1 , currentFile.name.search( /\.[0-9]+/ ) );
+        var currentFileSubVersion = currentFile.name.slice( currentFile.name.search( /\.[0-9]+/ ) + 1 , currentFile.name.search( ".mov" ) );
+        if( typeof sortedExports[ currentFileName ] === "undefined" ){ sortedExports[ currentFileName ] = new Array(); }
+        if( typeof sortedExports[ currentFileName ][ currentFileVersion ] === "undefined" ){ sortedExports[ currentFileName ][ currentFileVersion ] = new Array(); }
+        if( typeof sortedExports[ currentFileName ][ currentFileVersion ][ currentFileSubVersion ] === "undefined" ){ sortedExports[ currentFileName ][ currentFileVersion ][ currentFileSubVersion ] = new Array(); }
+        sortedExports[ currentFileName ][ currentFileVersion ][ currentFileSubVersion ] = currentFile ;
+    }
+    for( shot in sortedExports ){
+        var lastVersion = true ;
+        for( var j = sortedExports[ shot ].length ; j >= 0 ; j-- ){
+            if( typeof sortedExports[ shot ][j] !== "undefined" ){
+                for( var k = sortedExports[ shot ][j].length ; k >= 0 ; k-- ){
+                    if( typeof sortedExports[ shot ][j][k] !== "undefined" ){
+                        if( lastVersion ){
+                            lastVersion = false ;
+                            continue ;
+                        }
+                        sortedExports[ shot ][j][k].copy( oldVersionsFolder.fsName + "/" + sortedExports[ shot ][j][k].name );
+                        sortedExports[ shot ][j][k].remove();
+                    }
+                }
+            }
+        }
+    }
+
+}
+/**
+ * Opens a AEP file for the asked shot. 
+ * @param { string } sequenceNb Number of the Sequence.
+ * @param { string } shotNb Number of the Shot.
+ * @returns 
+ */
+function openingAEP( sequenceNb , shotNb ){
+    
+    //Cleaning the numbers entered by the user.
+    sequenceNb = cleanNumberString( sequenceNb , 3 );
+    shotNb = cleanNumberString( shotNb , 3 );
+    if( sequenceNb == null || shotNb == null ){ displayAnnounceDlg( "Error" , undefined , "   One or more of the numbers you entered is invalid, please correct it.");  return ; }
+    //Getting the Project Folder.
+    var projectFolder = getSavedString( "OLItoolboxSave" , "OLIFolder" );
+    if( projectFolder == null ){
+        projectFolder = Folder.myDocuments.selectDlg( "Where is your \"OLIVIA\" Folder?" );
+        if( projectFolder != null && projectFolder.name == "OLIVIA" ){
+            saveString( "OLItoolboxSave" ,  "OLIFolder" , projectFolder.fsName );
+        } else {
+            displayAnnounceDlg( "Error" , undefined , "   You did not select a Folder named \"OLIVIA\".");
+            return ;
+        }
+    } else {
+        projectFolder = new Folder( projectFolder );
+    }
+    //Getting the aep files.
+    var shotAEPfile = null
+    var shotAEPfiles = new Folder( projectFolder.fsName + "/03_AEP" ).getFiles( "OL-sq" + sequenceNb + "_sh" + shotNb + "_comp_v*.aep" );
+    if( shotAEPfiles.length > 0 && shotAEPfiles.length < 2 ){
+        shotAEPfile = shotAEPfiles[0];
+    } else if( shotAEPfiles.length > 1 ){
+        var shotAEPfileName = displayAEPfilesNameDlg( shotAEPfiles );
+        if( shotAEPfileName != null ){ shotAEPfile = new File( projectFolder.fsName + "/03_AEP/" + shotAEPfileName ) }
+    }
     //Checking if the aep file already exists.
-    var aepFile = new File( new Folder( projectFolder.fsName + "/03_AEP" ).getFiles( "OL-sq" + sequenceNb + "_sh" + shotNb + "_comp_v*.aep" )[0] );
-    if( aepFile.exists ){
-        //Saving the values for the shot to create.
+    if( shotAEPfile.exists ){
+        //Saving the values of the shot to open.
         saveString( "OLItoolboxSave" ,  "sequenceNb" , JSON.stringify( sequenceNb ) );
         saveString( "OLItoolboxSave" ,  "shotNb" , JSON.stringify( shotNb ) );
-        app.open( aepFile );
-    } else {
+        app.open( shotAEPfile );
+    } else if( shotAEPfile != null ){
         displayAnnounceDlg( "Error" , undefined , "   I can't find the AEP file for this shot." );
         return ;
     }
 
+}
+/**
+ * Opens a dialog listing the different AEP files of a list.
+ * @param { array } AEPfiles Array with File objects of AEPs.
+ * @returns { string } The name of the aep File to open.
+ */
+function displayAEPfilesNameDlg( AEPfiles ){
+
+    var aepFileToOpen = null ;
+    var aepFilesDlg = new Window( "dialog" , "Choose your AEP file." , undefined , { borderless: true } );
+    aepFilesDlg.spacing = 5
+        aepFilesDlg.global = aepFilesDlg.add( "Panel" , undefined , undefined );
+        aepFilesDlg.global.alignChildren = "Center" ;
+        aepFilesDlg.global.spacing = 5 ;
+        aepFilesDlg.global.margins = [ 5 , 5 , 5 , 10 ]
+            aepFilesDlg.global.msg = aepFilesDlg.global.add( "statictext" , undefined , "   I have found several AEP files for the shot you asked.\n\n   Which one would you like to open?", { multiline: true } );
+            var aepFilesButtonsGrp = aepFilesDlg.global.add( "group" );
+                aepFilesButtonsGrp.orientation = "Column" ;
+                aepFilesButtonsGrp.spacing = 0 ;
+                var nb = [] ;
+                for( var i = 0 ; i < AEPfiles.length ; i++ ){
+                    var newButton = aepFilesButtonsGrp.add( "button" , undefined , AEPfiles[i].name );
+                    newButton.onClick = function (){ aepFileToOpen = this.text ; aepFilesDlg.close() ; }
+                }
+
+        aepFilesDlg.Btn = aepFilesDlg.add( "Button" , undefined , "Cancel" );
+        aepFilesDlg.Btn.size = [ 75 , 20 ];
+    aepFilesDlg.show();
+    return aepFileToOpen
+      
 }
 /**
  * Creates a AEP file for the asked shot. 
@@ -791,52 +887,56 @@ function convertingTIFFS(){
         }
     }
     //Announcing the end of the script.
-    displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.")
+    displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.\n\n   Everything is tidy and ready to be launched.")
 
 }
 //Launch the render queue and update the folders name.
-function exportTIFFS(){
+function exportingEXRs(){
 
     app.project.renderQueue.render();
     var RQitems = app.project.renderQueue.items ;
-    for( var i = 1 ; i <= RQitems.length ; i++ ){
-        var outputFilePath = RQitems[i].outputModules[1].file.fsName ;
-        outputFilePath = outputFilePath.split( "\\" );
-        outputFilePath.pop();
-        outputFilePath.pop();
-        outputFilePath = outputFilePath.join( "\\" );
-        var outputShotFolder = new Folder( outputFilePath );
-        if( outputShotFolder.exists ){
-            if( outputShotFolder.name.search( "%20-%20ToDo" ) != -1 ){
-                outputShotFolder.rename( outputShotFolder.name.slice( 0 , - 11 ) );
+    if( RQitems[ RQitems.length ].status == RQItemStatus.DONE ){
+        for( var i = 1 ; i <= RQitems.length ; i++ ){
+            var outputFilePath = RQitems[i].outputModules[1].file.fsName ;
+            outputFilePath = outputFilePath.split( "\\" );
+            outputFilePath.pop();
+            outputFilePath.pop();
+            outputFilePath = outputFilePath.join( "\\" );
+            var outputShotFolder = new Folder( outputFilePath );
+            if( outputShotFolder.exists ){
+                if( outputShotFolder.name.search( "%20-%20ToDo" ) != -1 ){
+                    outputShotFolder.rename( outputShotFolder.name.slice( 0 , - 11 ) );
+                }
+            }
+            var RQitemName = RQitems[i].outputModules[1].file.name ;
+            RQitemName = RQitemName.slice( 0 , RQitemName.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) );
+            var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( RQitemName + "*.dgn*" );
+            if( dgnFolder.length > 0 ){
+                dgnFolder = dgnFolder[0];
+                if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) == -1 ){
+                    dgnFolder.rename( dgnFolder.name + " - Done" );
+                } else if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) != -1 ){
+                    dgnFolder.rename( dgnFolder.name.replace( "%20-%20ToExport" , "%20-%20Done" ) );
+                }
             }
         }
-        var RQitemName = RQitems[i].outputModules[1].file.name ;
-        RQitemName = RQitemName.slice( 0 , RQitemName.search( /_[0-9]{2}_[0-9A-Za-z]{2,}/ ) );
-        var dgnFolder = new Folder( "E:/OLIVIA/01 - DGN/01 - DGNs" ).getFiles( RQitemName + "*.dgn*" );
-        if( dgnFolder.length > 0 ){
-            dgnFolder = dgnFolder[0];
-            if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) == -1 ){
-                dgnFolder.rename( dgnFolder.name + " - Done" );
-            } else if( dgnFolder.name.search( "%20-%20Done" ) == -1 && dgnFolder.name.search( "%20-%20ToExport" ) != -1 ){
-                dgnFolder.rename( dgnFolder.name.replace( "%20-%20ToExport" , "%20-%20Done" ) );
-            }
+        if( app.project.file.name.search( "%20-%20exported" ) == -1 ){
+            var newFileName = app.project.file.name.slice( 0 , -4 ) + " - exported.aep"
+            var oldFilePath = app.project.file.fsName ;
+            oldFilePath = oldFilePath.split( "\\" );
+            oldFilePath.pop();
+            oldFilePath = oldFilePath.join( "\\" );
+            app.project.file.rename( newFileName );
+            app.project.file ;
+            app.project.save( new File( oldFilePath + "/" + newFileName ) );
         }
+        //Announcing the end of the script.
+        displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.\n\n   Everything has been exported and renamed.")
     }
-    if( app.project.file.name.search( "%20-%20exported" ) == -1 ){
-        var newFileName = app.project.file.name.slice( 0 , -4 ) + " - exported.aep"
-        var oldFilePath = app.project.file.fsName ;
-        oldFilePath = oldFilePath.split( "\\" );
-        oldFilePath.pop();
-        oldFilePath = oldFilePath.join( "\\" );
-        app.project.file.rename( newFileName );
-        app.project.file ;
-        app.project.save( new File( oldFilePath + "/" + newFileName ) );
-    }
-    //Announcing the end of the script.
-    displayAnnounceDlg( "The End" , "The End :" , "   This is the end, my friend.")
 
 }
+//////////////////////////////////////////////////
+//
 //  json2.js
 //  2023-05-10
 //  Public Domain.
