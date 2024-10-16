@@ -8,7 +8,7 @@ creatingUI( this );
  */
 function creatingUI( thisObj ){
     
-    var versionNb = "1.2.0" ;
+    var versionNb = "1.2.1" ;
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
@@ -151,6 +151,7 @@ function sortingExports(){
             }
         }
     }
+    displayAnnounceDlg( "I'm done" , "" , "   I've finished doing your job for you." )
 
 }
 /**
@@ -300,7 +301,7 @@ function creatingAEP( sequenceNb , shotNb ){
     var animationRefItems = [] ;
     var animationRefFiles = new Folder( animationFolder.fsName ).getFiles( "*" + shotCode + "*.mp4" );
     if( animationRefFiles.length > 0 ){
-        for( var i = 0 ; i < animationRefFiles.length ; i++ ){ 
+        for( var i = 0 ; i < animationRefFiles.length ; i++ ){
             var animationRefFile = animationRefFiles[i];
             animationRefItems[i] = app.project.importFile( new ImportOptions( animationRefFile ) );
             animationRefItems[i].parentFolder = assetsFolderItem ;
