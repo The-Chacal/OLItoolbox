@@ -394,7 +394,7 @@ creatingUI( this );
 function creatingUI( thisObj ){
     
     
-    var versionNb = "1.3.1" ;
+    var versionNb = "1.3.1" ;//Released
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
