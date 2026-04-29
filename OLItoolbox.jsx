@@ -394,7 +394,7 @@ creatingUI( this );
 function creatingUI( thisObj ){
     
     
-    var versionNb = "1.4.0" ;
+    var versionNb = "1.5.0" ;
     var OLItoolboxDlg = thisObj ;
         var OLItoolboxdlgGroup = OLItoolboxDlg.add( "Group" );
             OLItoolboxdlgGroup.orientation = "Column" ;
@@ -452,10 +452,8 @@ function creatingUI( thisObj ){
                 btnsGroupE.spacing = 0 ;
                 var editSort = btnsGroupE.add( "Button" , undefined , "Edit Sort" );
                     editSort.size = btnsSize;
-                var btnX = btnsGroupE.add( "Button" , undefined , "" );
-                    btnX.size = btnsSize;
-                    btnX.visible = false ;
-
+                var finalExport = btnsGroupE.add( "Button" , undefined , "Final Exp" );
+                    finalExport.size = btnsSize;
     
     var savedConvertBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "convertBtnVisibility" ) );
     if( savedConvertBtnVisibility != null ){
@@ -475,8 +473,15 @@ function creatingUI( thisObj ){
     if( savedEditSortBtnVisibility != null ){
         editSort.visible = savedEditSortBtnVisibility ;
     } else {
-        convertFiles.visible = false ;
-        saveString( "OLItoolboxSave" , "editSortBtnVisibility" , JSON.stringify( convertFiles.visible ) ); 
+        editSort.visible = false ;
+        saveString( "OLItoolboxSave" , "editSortBtnVisibility" , JSON.stringify( editSort.visible ) ); 
+    }
+    var savedfinalExportBtnVisibility = JSON.parse( getSavedString( "OLItoolboxSave" , "finalExportBtnVisibility" ) );
+    if( savedfinalExportBtnVisibility != null ){
+        finalExport.visible = savedfinalExportBtnVisibility ;
+    } else {
+        finalExport.visible = false ;
+        saveString( "OLItoolboxSave" , "finalExportBtnVisibility" , JSON.stringify( finalExport.visible ) ); 
     }
 
     OLItoolboxDlg.layout.layout( "true" );
@@ -498,7 +503,14 @@ function creatingUI( thisObj ){
     convertFiles.onClick = convertingTIFFS ;
     exportFiles.onClick = exportingEXRs ;
     editSort.onClick = editSorting ;
+    finalExport.onClick = function(){ exportingShot( "Final" )};
 
+}
+/**
+ * Sets up the final Exports in After Effects
+ */
+function finalExporting(){
+    alert("prout")
 }
 /**
  * Sorts the exports based on what have already been sent.
@@ -1062,7 +1074,7 @@ function copyFiles( item , destination ){
 }
 /**
  * Adds the main Comp to the render queue.
- * @param { string } exportFormat EXR or MOV for EXR sequence or AppleProRes 422 HQ export.
+ * @param { string } exportFormat EXR or MOV of Final for EXR sequence, AppleProRes 422 HQ export or both.
  */
 function exportingShot( exportFormat ){
     if( app.project != undefined && app.project.file.name.search( "OL-" ) >= 0 ){
@@ -1117,6 +1129,28 @@ function exportingShot( exportFormat ){
             mainCompRender.applyTemplate( "SL / CompLength 16bits" );
             mainCompRender.outputModules[1].applyTemplate( "SL / AppleProRes 422 Proxy" );
             mainCompRender.outputModules[1].file = new File( MOVfolder.fsName + "/" + itemToExport.name + ".mov");
+        }
+        if( exportFormat == "Final" ){
+            var EXRfolder = new Folder( projectFolder.fsName + "/04_Exports/01_EXR" );
+            if( !EXRfolder.exists ){ EXRfolder.create(); }
+            mainCompRender.applyTemplate( "SL / CompLength 16bits" );
+            mainCompRender.outputModules[1].applyTemplate( "SL / EXR 16 bits PIZ" );
+            var new_data = {
+                "Output File Info":
+                {
+                    "Base Path": EXRfolder.fsName ,
+                    "Subfolder Path": itemToExport.name ,
+                    "File Name": itemToExport.name + "_[#####].exr"
+                }
+            }
+            mainCompRender.outputModules[1].setSettings( new_data );
+            mainCompRender.outputModules.add()
+            var MOVfolder = new Folder( projectFolder.fsName + "/04_Exports/01_MOV" );
+            if( !MOVfolder.exists ){ MOVfolder.create(); }
+            mainCompRender.applyTemplate( "SL / CompLength 16bits" );
+            mainCompRender.outputModules[2].applyTemplate( "SL / AppleProRes 422 Proxy" );
+            mainCompRender.outputModules[2].file = new File( MOVfolder.fsName + "/" + itemToExport.name + ".mov");
+
         }
     }
 }
